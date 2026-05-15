@@ -52,6 +52,7 @@ class EntityExtractionService {
     }
 
     return Transaction(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
       date: extractedDate,
       amount: extractedAmount,
       rawText: text,

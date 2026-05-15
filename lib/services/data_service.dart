@@ -6,10 +6,56 @@ import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants.dart';
+import '../models/transaction.dart';
 
 class DataService {
   static const String _keyDashboardView = 'dashboard_view';
   static const String _keyStartOfWeek = 'start_of_week';
+  static const String _keyTransactions = 'transactions_history';
+
+  // Transactions
+  static Future<List<Transaction>> getTransactions() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? jsonString = prefs.getString(_keyTransactions);
+    if (jsonString == null) {
+      return [];
+    }
+
+    try {
+      final List<dynamic> jsonList = jsonDecode(jsonString);
+      return jsonList.map((json) => Transaction.fromJson(json as Map<String, dynamic>)).toList();
+    } catch (e) {
+      print('Error decoding transactions: $e');
+      return [];
+    }
+  }
+
+  static Future<void> saveTransactions(List<Transaction> transactions) async {
+    final prefs = await SharedPreferences.getInstance();
+    final String jsonString = jsonEncode(transactions.map((t) => t.toJson()).toList());
+    await prefs.setString(_keyTransactions, jsonString);
+  }
+
+  static Future<void> addTransaction(Transaction transaction) async {
+    final transactions = await getTransactions();
+    transactions.add(transaction);
+    await saveTransactions(transactions);
+  }
+
+  static Future<void> updateTransaction(Transaction transaction) async {
+    final transactions = await getTransactions();
+    final index = transactions.indexWhere((t) => t.id == transaction.id);
+    if (index != -1) {
+      transactions[index] = transaction;
+      await saveTransactions(transactions);
+    }
+  }
+
+  static Future<void> deleteTransaction(String id) async {
+    final transactions = await getTransactions();
+    transactions.removeWhere((t) => t.id == id);
+    await saveTransactions(transactions);
+  }
 
   // Settings
   static Future<String> getDashboardView() async {
@@ -36,12 +82,15 @@ class DataService {
   static Future<void> exportToZip() async {
     final prefs = await SharedPreferences.getInstance();
 
+    final transactions = await getTransactions();
+
     final Map<String, dynamic> exportData = {
       'settings': {
         _keyDashboardView: prefs.getString(_keyDashboardView) ?? 'Weekly',
         _keyStartOfWeek: prefs.getString(_keyStartOfWeek) ?? 'Monday',
       },
       'categories': initialCategories.map((c) => c.toJson()).toList(),
+      'transactions': transactions.map((t) => t.toJson()).toList(),
     };
 
     final jsonString = jsonEncode(exportData);
@@ -100,6 +149,12 @@ class DataService {
       if (data.containsKey('categories')) {
         // Here we would deserialize categories and update the app's state if we used state management
         // print('Categories data found: ${data['categories'].length} items');
+      }
+
+      if (data.containsKey('transactions')) {
+        final List<dynamic> txList = data['transactions'];
+        final List<Transaction> transactions = txList.map((json) => Transaction.fromJson(json as Map<String, dynamic>)).toList();
+        await saveTransactions(transactions);
       }
 
     } else {
