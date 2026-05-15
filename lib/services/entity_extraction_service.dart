@@ -1,6 +1,7 @@
 import 'package:google_mlkit_entity_extraction/google_mlkit_entity_extraction.dart';
 import '../models/transaction.dart';
 import '../constants.dart';
+import 'data_service.dart';
 
 class EntityExtractionService {
   final EntityExtractor _entityExtractor =
@@ -39,14 +40,29 @@ class EntityExtractionService {
 
     final lowerText = text.toLowerCase();
 
-    for (final category in initialCategories) {
-      if (lowerText.contains(category.name.toLowerCase())) {
-        matchedCategory = category.name;
+    // Check user-defined rules first
+    final categoryRules = await DataService.getCategoryRules();
+    bool ruleMatched = false;
+    for (final rule in categoryRules) {
+      if (lowerText.contains(rule.keyword.toLowerCase())) {
+        matchedCategory = rule.category;
+        matchedSubCategory = rule.subCategory;
+        ruleMatched = true;
+        break;
       }
-      for (final sub in category.subCategories) {
-        if (lowerText.contains(sub.toLowerCase())) {
+    }
+
+    // Fallback to initial categories if no rule matched
+    if (!ruleMatched) {
+      for (final category in initialCategories) {
+        if (lowerText.contains(category.name.toLowerCase())) {
           matchedCategory = category.name;
-          matchedSubCategory = sub;
+        }
+        for (final sub in category.subCategories) {
+          if (lowerText.contains(sub.toLowerCase())) {
+            matchedCategory = category.name;
+            matchedSubCategory = sub;
+          }
         }
       }
     }

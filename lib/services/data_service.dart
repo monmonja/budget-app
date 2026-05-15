@@ -6,12 +6,48 @@ import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants.dart';
+import '../models/category_rule.dart';
 import '../models/transaction.dart';
 
 class DataService {
   static const String _keyDashboardView = 'dashboard_view';
   static const String _keyStartOfWeek = 'start_of_week';
   static const String _keyTransactions = 'transactions_history';
+  static const String _keyCategoryRules = 'category_rules';
+
+  // Category Rules
+  static Future<List<CategoryRule>> getCategoryRules() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? jsonString = prefs.getString(_keyCategoryRules);
+    if (jsonString == null) {
+      return [];
+    }
+    try {
+      final List<dynamic> jsonList = jsonDecode(jsonString);
+      return jsonList.map((json) => CategoryRule.fromJson(json as Map<String, dynamic>)).toList();
+    } catch (e) {
+      print('Error decoding category rules: $e');
+      return [];
+    }
+  }
+
+  static Future<void> saveCategoryRules(List<CategoryRule> rules) async {
+    final prefs = await SharedPreferences.getInstance();
+    final String jsonString = jsonEncode(rules.map((r) => r.toJson()).toList());
+    await prefs.setString(_keyCategoryRules, jsonString);
+  }
+
+  static Future<void> addCategoryRule(CategoryRule rule) async {
+    final rules = await getCategoryRules();
+    rules.add(rule);
+    await saveCategoryRules(rules);
+  }
+
+  static Future<void> deleteCategoryRule(String id) async {
+    final rules = await getCategoryRules();
+    rules.removeWhere((r) => r.id == id);
+    await saveCategoryRules(rules);
+  }
 
   // Transactions
   static Future<List<Transaction>> getTransactions() async {
@@ -83,6 +119,7 @@ class DataService {
     final prefs = await SharedPreferences.getInstance();
 
     final transactions = await getTransactions();
+    final categoryRules = await getCategoryRules();
 
     final Map<String, dynamic> exportData = {
       'settings': {
@@ -90,6 +127,7 @@ class DataService {
         _keyStartOfWeek: prefs.getString(_keyStartOfWeek) ?? 'Monday',
       },
       'categories': initialCategories.map((c) => c.toJson()).toList(),
+      'category_rules': categoryRules.map((r) => r.toJson()).toList(),
       'transactions': transactions.map((t) => t.toJson()).toList(),
     };
 
@@ -149,6 +187,12 @@ class DataService {
       if (data.containsKey('categories')) {
         // Here we would deserialize categories and update the app's state if we used state management
         // print('Categories data found: ${data['categories'].length} items');
+      }
+
+      if (data.containsKey('category_rules')) {
+        final List<dynamic> rulesList = data['category_rules'];
+        final List<CategoryRule> rules = rulesList.map((json) => CategoryRule.fromJson(json as Map<String, dynamic>)).toList();
+        await saveCategoryRules(rules);
       }
 
       if (data.containsKey('transactions')) {

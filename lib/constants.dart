@@ -12,4 +12,5 @@ final List<BudgetCategory> initialCategories = [
   BudgetCategory(name: 'Phone'),
   BudgetCategory(name: 'Savings'),
   BudgetCategory(name: 'Misc'),
+  BudgetCategory(name: 'Tithe'),
 ];
