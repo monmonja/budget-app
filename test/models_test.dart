@@ -27,23 +27,34 @@ void main() {
     test('Transaction should initialize correctly and serialize to JSON', () {
       final now = DateTime.now();
       final transaction = Transaction(
+        id: 'txn_123',
         date: now,
         amount: 50.0,
         rawText: 'Woolworths 50.0',
         inferredCategory: 'Grocery',
       );
 
+      expect(transaction.id, 'txn_123');
       expect(transaction.date, now);
       expect(transaction.amount, 50.0);
       expect(transaction.rawText, 'Woolworths 50.0');
       expect(transaction.inferredCategory, 'Grocery');
 
       final json = transaction.toJson();
+      expect(json['id'], 'txn_123');
       expect(json['date'], now.toIso8601String());
       expect(json['amount'], 50.0);
       expect(json['rawText'], 'Woolworths 50.0');
       expect(json['inferredCategory'], 'Grocery');
       expect(json['inferredSubCategory'], null);
+
+      final fromJson = Transaction.fromJson(json);
+      expect(fromJson.id, 'txn_123');
+      expect(fromJson.date, now);
+      expect(fromJson.amount, 50.0);
+      expect(fromJson.rawText, 'Woolworths 50.0');
+      expect(fromJson.inferredCategory, 'Grocery');
+      expect(fromJson.inferredSubCategory, null);
     });
   });
 }
