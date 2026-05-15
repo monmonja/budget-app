@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/data_service.dart';
+import 'category_rules_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -125,6 +126,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 }
               },
             ),
+          ),
+          ListTile(
+            title: const Text('Manage Category Rules'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const CategoryRulesScreen()),
+              );
+            },
           ),
           const Divider(),
           const Text(

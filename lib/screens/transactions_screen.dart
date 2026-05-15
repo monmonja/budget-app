@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../models/transaction.dart';
 import '../services/data_service.dart';
 import 'add_edit_transaction_screen.dart';
+import 'import_transactions_screen.dart';
 
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
@@ -68,6 +69,21 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Transactions History'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.download),
+            tooltip: 'Import Transactions',
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ImportTransactionsScreen()),
+              );
+              if (result == true) {
+                _loadTransactions();
+              }
+            },
+          )
+        ],
       ),
       body: _transactions.isEmpty
           ? const Center(child: Text('No transactions found.'))
